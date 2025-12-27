@@ -6,7 +6,7 @@ import queue
 from importlib import import_module
 from typing import Tuple
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox, QFileDialog, QListWidgetItem
+from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox, QFileDialog, QListWidgetItem, QListWidget,QSizePolicy
 from PySide6.QtCore import QThread, QObject, QTimer
 
 from deepseek import DeepSeek
@@ -85,6 +85,35 @@ class AnalyseWorker(QObject):
         except Exception as e:
             print(f"❌ 后台异常: {e}")
 
+class FileDropListWidget(QListWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAcceptDrops(True)
+        self.setDragEnabled(False)
+        self.setDropIndicatorShown(True)
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        for url in event.mimeData().urls():
+            path = url.toLocalFile()
+            if path and not self._is_in_list(path):
+                self.addItem(QListWidgetItem(path))
+        event.acceptProposedAction()
+
+    def _is_in_list(self, path: str) -> bool:
+        for i in range(self.count()):
+            if self.item(i).text() == path:
+                return True
+        return False
+
 
 # =====================================================
 # 主窗口
@@ -92,6 +121,7 @@ class AnalyseWorker(QObject):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.__version__ = "1.3"
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
@@ -114,6 +144,23 @@ class MainWindow(QMainWindow):
         self.result_timer.timeout.connect(self.check_result)
         self.result_timer.start(100)
 
+        old_widget = self.ui.listWidget_files
+        parent = old_widget.parent()
+        layout = parent.layout()
+
+        new_widget = FileDropListWidget(parent)
+        new_widget.setSizePolicy(
+            QSizePolicy.Expanding,
+            QSizePolicy.Expanding
+        )
+
+        layout.replaceWidget(old_widget, new_widget)
+        old_widget.deleteLater()
+
+        self.ui.listWidget_files = new_widget
+
+
+
         # ===== 隐藏修改代码区域 ====
         self.ui.frame_edit_code.hide()
 
@@ -127,6 +174,12 @@ class MainWindow(QMainWindow):
         self.ui.pushButton_send_edit_query.clicked.connect(self.edit_code)
         self.ui.pushButton_test_api.clicked.connect(self.check_connection)
 
+    def add_drag_file(self):
+        """
+        识别拖到self.ui.listWidget_files的文件/文件夹，获得它们的路径。然后把这些路径添加到self.ui.listWidget_files里
+        :return:
+        """
+        self.ui.listWidget_files
 
     def edit_code(self):
         original_code = self.ui.plainTextEdit_code.toPlainText()
@@ -277,7 +330,7 @@ scipy
         # 获取 listWidget_files 中的文件
         files = [self.ui.listWidget_files.item(i).text() for i in range(self.ui.listWidget_files.count())]
         if files:
-            system_prompt += f"用户还提供了以下文件/文件夹和其路径，需要的时候在代码中写入读取对应文件的代码。路径如下：{files}"
+            system_prompt += f"用户还提供了以下文件/文件夹和其路径，需要的时候在代码中写入读取对应文件的代码,并注意处理路径中的空格。路径如下：{files}"
 
         print("🧵 启动后台线程")
 

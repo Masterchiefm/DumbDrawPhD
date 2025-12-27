@@ -16,7 +16,7 @@
 
 ## 功能特点 🎯
 
-- 🖱️ **拖拽上传**：直接把数据文件拖进来就好啦~（正在做）
+- 🖱️ **拖拽上传**：直接把数据文件拖进来就好啦~（也可以点击“导入”按钮）
 - 🗣️ **人话交互**："帮我画个柱状图，要蓝色的！背景要五彩斑斓渐变黑" 这样说就行！
 - 🤖 **AI生成代码**：自动生成Python绘图代码并给你图
 - 😺 **猫娘陪伴**：画图时还有本喵给你加油打气！
@@ -33,7 +33,7 @@
 
 ## 示例对话 💬
 
-用户："给我的实验数据画个柱状图，要彩虹色的，加上误差线"
+用户："这是一个成绩单，里面有StudentID，Gender，Score这三列。你帮我画个图，统计一下全班的成绩分布，以及给个分析图看看男生女生直接成绩有无显著差异。把差异的星号*画在图上"
 
 DumbDrawPhD："喵~明白啦！(≧▽≦) 正在用seaborn生成彩虹柱状图，已经添加误差线咯~"
 
@@ -58,3 +58,25 @@ DumbDrawPhD："喵~明白啦！(≧▽≦) 正在用seaborn生成彩虹柱状图
 🐾 **Happy Dumb Drawing!** 🐾
 
 *"就算是最笨的博士，也有权利画出漂亮的图表！" —— DumbDrawPhD开发喵*
+
+
+## 开发
+打包成exe或其它二进制文件时候，务必使用隐式导入，将一些必要的包加进去，不然可执行文件里运行代码的时候会找不到包。例如以下：
+```commandline
+pyinstaller -w DumbDrawPhD.py \
+    --hidden-import PySide6 \
+    --hidden-import requests \
+    --hidden-import matplotlib \
+    --hidden-import seaborn \
+    --hidden-import pandas \
+    --hidden-import openpyxl \
+    --hidden-import PIL \
+    --hidden-import Bio \
+    --hidden-import numpy \
+    --hidden-import rasterio \
+    --hidden-import sklearn \
+    --hidden-import skimage \
+    --hidden-import scipy \
+    --hidden-import cv2 \
+    --hidden-import openai
+```

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'GUIrmNyrl.ui'
+## Form generated from reading UI file 'GUIehadqY.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.10.1
 ##
@@ -40,6 +40,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
         self.frame_5 = QFrame(self.centralwidget)
         self.frame_5.setObjectName(u"frame_5")
+        self.frame_5.setAcceptDrops(True)
         self.frame_5.setFrameShape(QFrame.Shape.StyledPanel)
         self.frame_5.setFrameShadow(QFrame.Shadow.Raised)
         self.horizontalLayout_7 = QHBoxLayout(self.frame_5)
