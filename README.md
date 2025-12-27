@@ -22,6 +22,7 @@
 - 😺 **猫娘陪伴**：画图时还有本喵给你加油打气！
 
 ## 快速开始 🚀
+### 安装
 
 1. **拖**：把你的数据文件(.csv/.xlsx/.txt,甚至是tif格式的图片也可以喵)拖到窗口里
 2. **说**：告诉DumbDrawPhD你想画什么
@@ -62,6 +63,13 @@ DumbDrawPhD："喵~明白啦！(≧▽≦) 正在用seaborn生成彩虹柱状图
 
 ## 开发
 打包成exe或其它二进制文件时候，务必使用隐式导入，将一些必要的包加进去，不然可执行文件里运行代码的时候会找不到包。例如以下：
+
+Windows:
+```commandline
+pyinstaller -w DumbDrawPhD.py     --hidden-import PySide6     --hidden-import requests     --hidden-import matplotlib     --hidden-import seaborn     --hidden-import pandas     --hidden-import openpyxl     --hidden-import PIL     --hidden-import Bio     --hidden-import numpy     --hidden-import rasterio     --hidden-import sklearn     --hidden-import skimage     --hidden-import scipy     --hidden-import cv2   
+```
+
+Linux:
 ```commandline
 pyinstaller -w DumbDrawPhD.py \
     --hidden-import PySide6 \
@@ -77,6 +85,5 @@ pyinstaller -w DumbDrawPhD.py \
     --hidden-import sklearn \
     --hidden-import skimage \
     --hidden-import scipy \
-    --hidden-import cv2 \
-    --hidden-import openai
+    --hidden-import cv2 
 ```
