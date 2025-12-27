@@ -32,8 +32,8 @@ DESKTOP_PATH=""
 
 if [ "$OS_TYPE" = "Darwin" ]; then
     # macOS
-    DESKTOP_PATH="$HOME/Desktop/ChartGenius.app"
-    cat > "$HOME/ChartGenius" << 'EOF'
+    DESKTOP_PATH="$HOME/Desktop/DumbDrawPhD.app"
+    cat > "$HOME/DumbDrawPhD" << 'EOF'
 #!/bin/bash
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 cd "$SCRIPT_DIR"
@@ -41,11 +41,11 @@ source venv/bin/activate
 python DumbDrawPhD.py
 deactivate
 EOF
-    chmod +x "$HOME/ChartGenius"
+    chmod +x "$HOME/DumbDrawPhD"
     echo "Please manually create an app bundle on macOS"
 elif [ "$OS_TYPE" = "Linux" ]; then
     # Ubuntu/Linux
-    DESKTOP_PATH="$HOME/Desktop/ChartGenius.desktop"
+    DESKTOP_PATH="$HOME/Desktop/DumbDrawPhD.desktop"
     cat > "$DESKTOP_PATH" << EOF
 [Desktop Entry]
 Version=1.0
@@ -53,8 +53,8 @@ Type=Application
 Terminal=true
 Exec=$PWD/run.sh
 Path=$PWD
-Name=ChartGenius
-Comment=Run ChartGenius Application
+Name=DumbDrawPhD
+Comment=Run DumbDrawPhD Application
 Icon=$PWD/icon.png
 EOF
     chmod +x "$DESKTOP_PATH"
