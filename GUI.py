@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'GUInVqAzy.ui'
+## Form generated from reading UI file 'GUIrmNyrl.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.10.1
 ##
@@ -46,10 +46,12 @@ class Ui_MainWindow(object):
         self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
         self.groupBox = QGroupBox(self.frame_5)
         self.groupBox.setObjectName(u"groupBox")
+        self.groupBox.setAcceptDrops(True)
         self.verticalLayout_4 = QVBoxLayout(self.groupBox)
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
         self.tabWidget = QTabWidget(self.groupBox)
         self.tabWidget.setObjectName(u"tabWidget")
+        self.tabWidget.setAcceptDrops(True)
         self.tab = QWidget()
         self.tab.setObjectName(u"tab")
         self.horizontalLayout_4 = QHBoxLayout(self.tab)
@@ -293,7 +295,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"ChartGenius-\u4eba\u5de5\u667a\u80fd\u7ed8\u56fe", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"DumbDrawPhD", None))
         self.actionhelp.setText(QCoreApplication.translate("MainWindow", u"help", None))
         self.actionupdate.setText(QCoreApplication.translate("MainWindow", u"update", None))
         self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"\u6570\u636e\u8f93\u5165", None))
