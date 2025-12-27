@@ -1,0 +1,17 @@
+# 忽略构建文件夹
+build/
+dist/
+.venv/
+.idea/
+__pycache__
+
+# 忽略所有PNG图片
+*.png
+
+# 忽略特定的Python测试文件
+test.py
+*.spec
+# 忽略配置文件
+config.json
+
+*.xml
