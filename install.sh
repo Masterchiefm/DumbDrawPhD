@@ -38,7 +38,7 @@ if [ "$OS_TYPE" = "Darwin" ]; then
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 cd "$SCRIPT_DIR"
 source venv/bin/activate
-python ChartGenuins.py
+python DumbDrawPhD.py
 deactivate
 EOF
     chmod +x "$HOME/ChartGenius"

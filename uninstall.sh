@@ -9,10 +9,10 @@ echo "Removing desktop shortcuts..."
 OS_TYPE=$(uname -s)
 
 if [ "$OS_TYPE" = "Darwin" ]; then
-    rm -f "$HOME/ChartGenius"
+    rm -f "$HOME/DumbDrawPhD"
     echo "Please manually remove the app bundle on macOS"
 elif [ "$OS_TYPE" = "Linux" ]; then
-    rm -f "$HOME/Desktop/ChartGenius.desktop"
+    rm -f "$HOME/Desktop/DumbDrawPhD.desktop"
 fi
 
 echo "Uninstallation complete!"
