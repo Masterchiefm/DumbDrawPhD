@@ -23,7 +23,35 @@
 
 ## 快速开始 🚀
 ### 安装
+1. 最简单的方法是直接从release中下载啦，但是只有win/Linux版本的
 
+
+2. 或者从源码运行
+首先下载源码并安装依赖：
+```commandline
+git clone https://github.com/Masterchiefm/DumbDrawPhD.git
+cd DumbDrawPhD
+pip install -r requirements.txt
+```
+搞定这些后，以后要运行就直接这样：
+```commandline
+cd DumbDrawPhD
+python DumbDrawPhD.py
+```
+这样就能运行啦！
+
+### 使用
+首先设置AI的API，AI可不是免费的哦！可以用deepseek,chatgpt等api，你有哪个用哪个。
+如果没有，这是我在SiliconFlow的邀请链接，你自己注册一个就行，送十几块钱的API费用呢。
+https://cloud.siliconflow.cn/i/Su2ao83G
+
+邀请码是Su2ao83G
+
+然后打开程序，在程序底部输入AI的base_url，model，api密钥就行了。
+例如我的就是``https://api.siliconflow.cn/v1``,``deepseek-ai/DeepSeek-V3``和``sk-xxxxxxxxxxxxxxxxxxxxxx``
+你照样填就好了
+
+实际使用：
 1. **拖**：把你的数据文件(.csv/.xlsx/.txt,甚至是tif格式的图片也可以喵)拖到窗口里
 2. **说**：告诉DumbDrawPhD你想画什么
    - "画个折线图，X是时间，Y是温度"
