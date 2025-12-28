@@ -340,7 +340,7 @@ scipy
             self.baseurl,
             self.model,
             self.api_key,
-            user_query,
+            self.user_query,
             system_prompt,
             self.result_queue
         )
