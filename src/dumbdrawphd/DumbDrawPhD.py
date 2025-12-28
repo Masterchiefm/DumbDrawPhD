@@ -381,6 +381,7 @@ scipy
                     "api_key": self.ui.lineEdit_key.text()
                 }, f, indent=4)
             print("✅ 配置保存成功")
+            self.get_config()
         except Exception as e:
             print(f"❌ 保存失败: {e}")
 
