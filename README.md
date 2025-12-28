@@ -27,16 +27,19 @@
 
 
 2. 或者从源码运行
-首先下载源码并安装依赖：
+理论上win，Linux，mac都可用
+首先在电脑安装python和pip。然后终端里运行以下即可：
 ```commandline
-git clone https://github.com/Masterchiefm/DumbDrawPhD.git
-cd DumbDrawPhD
-pip install -r requirements.txt
+# 国内用这个链接
+pip install git+https://gitee.com/MasterChiefm/DumbDrawPhD.git
+```
+```commandline
+# 网络好的话用这个链接
+pip install git+https://github.com/Masterchiefm/DumbDrawPhD.git
 ```
 搞定这些后，以后要运行就直接这样：
 ```commandline
-cd DumbDrawPhD
-python DumbDrawPhD.py
+DumbDrawPhD
 ```
 这样就能运行啦！
 
