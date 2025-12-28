@@ -232,7 +232,7 @@ class MainWindow(QMainWindow):
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
         self.thread.start()
-        self.ui.pushButton_send_edit_query.setDisabled(True)
+        # self.ui.pushButton_send_edit_query.setDisabled(True)
         # self.ui.pushButton_send_and_run_edit_query.setDisabled(True)
 
     def import_files(self):
@@ -293,8 +293,8 @@ class MainWindow(QMainWindow):
             print("完成")
         except Exception as e:
             print(f"❌ 执行代码失败，错误如下:\n {e}")
-        self.ui.pushButton_analyse.setDisabled(False)
-        self.ui.pushButton_send_edit_query.setDisabled(False)
+        # self.ui.pushButton_analyse.setDisabled(False)
+        # self.ui.pushButton_send_edit_query.setDisabled(False)
 
     def direct_run(self):
         code = self.ui.plainTextEdit_code.toPlainText()
@@ -309,8 +309,8 @@ class MainWindow(QMainWindow):
     # 启动后台分析
     # ---------------------
     def generate_code(self):
-        self.ui.pushButton_analyse.setDisabled(True)
-        user_query = self.ui.plainTextEdit_query.toPlainText()
+        # self.ui.pushButton_analyse.setDisabled(True)
+        # user_query = self.ui.plainTextEdit_query.toPlainText()
         system_prompt = """你是一个python绘图代码生成工具，你能根据用户的输入直接生成代码。
 你输出的内容只能有代码，不能有代码之外的其它东西。
 输出必须是 markdown ``` ``` 包裹的代码。
@@ -389,7 +389,7 @@ scipy
         """
         测试 API 连接：直接问 AI 你是谁，无需生成代码运行
         """
-        self.ui.pushButton_analyse.setDisabled(True)
+        # self.ui.pushButton_analyse.setDisabled(True)
         user_query = '画一个正弦函数'
         system_prompt = """你是一个python绘图代码生成工具，你能根据用户的输入直接生成代码。
            你输出的内容只能有代码，不能有代码之外的其它东西。
