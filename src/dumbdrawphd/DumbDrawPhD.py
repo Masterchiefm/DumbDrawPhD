@@ -312,8 +312,8 @@ class MainWindow(QMainWindow):
         # self.ui.pushButton_analyse.setDisabled(True)
         user_query = self.ui.plainTextEdit_query.toPlainText()
         system_prompt = """你是一个python绘图代码生成工具，你能根据用户的输入直接生成代码。
-你输出的内容只能有代码，不能有代码之外的其它东西。
-输出必须是 markdown ``` ``` 包裹的代码。
+你输出的内容只能有完整的代码，不能有代码之外的其它东西。
+输出必须是 markdown ``` ``` 包裹的代码，之外不能有任何说明，说明只能是代码里的注释。
 禁止 if __name__ == "__main__",代码结尾不要带plt.close()，即使保存了图片，也要plt.show()。
 除非用户指定了其它语言或者字体，否则务必使用英文作为图注、图题。
 代码中的注释与用户输入的语言一致
