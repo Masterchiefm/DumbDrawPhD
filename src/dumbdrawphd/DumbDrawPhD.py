@@ -232,8 +232,7 @@ class MainWindow(QMainWindow):
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
         self.thread.start()
-        # self.ui.pushButton_send_edit_query.setDisabled(True)
-        # self.ui.pushButton_send_and_run_edit_query.setDisabled(True)
+
 
     def import_files(self):
         """
@@ -293,8 +292,7 @@ class MainWindow(QMainWindow):
             print("完成")
         except Exception as e:
             print(f"❌ 执行代码失败，错误如下:\n {e}")
-        # self.ui.pushButton_analyse.setDisabled(False)
-        # self.ui.pushButton_send_edit_query.setDisabled(False)
+
 
     def direct_run(self):
         code = self.ui.plainTextEdit_code.toPlainText()
