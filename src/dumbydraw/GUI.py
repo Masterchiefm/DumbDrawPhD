@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'GUILFLAUU.ui'
+## Form generated from reading UI file 'GUIWPzbEh.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.10.1
 ##
@@ -20,14 +20,14 @@ from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QGroupBox,
     QHBoxLayout, QLabel, QLineEdit, QListWidget,
     QListWidgetItem, QMainWindow, QMenu, QMenuBar,
     QPlainTextEdit, QPushButton, QRadioButton, QScrollArea,
-    QSizePolicy, QSpacerItem, QStatusBar, QTabWidget,
-    QTextBrowser, QVBoxLayout, QWidget)
+    QSizePolicy, QSpacerItem, QSplitter, QStatusBar,
+    QTabWidget, QTextBrowser, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(1689, 998)
+        MainWindow.resize(1192, 914)
         icon = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.Computer))
         MainWindow.setWindowIcon(icon)
         self.actionhelp = QAction(MainWindow)
@@ -36,20 +36,23 @@ class Ui_MainWindow(object):
         self.actionupdate.setObjectName(u"actionupdate")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        self.horizontalLayout_8 = QHBoxLayout(self.centralwidget)
-        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
-        self.frame_5 = QFrame(self.centralwidget)
-        self.frame_5.setObjectName(u"frame_5")
-        self.frame_5.setFrameShape(QFrame.Shape.StyledPanel)
-        self.frame_5.setFrameShadow(QFrame.Shadow.Raised)
-        self.horizontalLayout_7 = QHBoxLayout(self.frame_5)
-        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
-        self.groupBox = QGroupBox(self.frame_5)
+        self.horizontalLayout = QHBoxLayout(self.centralwidget)
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.groupBox = QGroupBox(self.centralwidget)
         self.groupBox.setObjectName(u"groupBox")
         self.groupBox.setAcceptDrops(True)
-        self.verticalLayout_4 = QVBoxLayout(self.groupBox)
-        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
-        self.tabWidget = QTabWidget(self.groupBox)
+        self.horizontalLayout_12 = QHBoxLayout(self.groupBox)
+        self.horizontalLayout_12.setObjectName(u"horizontalLayout_12")
+        self.frame_9 = QFrame(self.groupBox)
+        self.frame_9.setObjectName(u"frame_9")
+        self.frame_9.setFrameShape(QFrame.Shape.StyledPanel)
+        self.frame_9.setFrameShadow(QFrame.Shadow.Raised)
+        self.verticalLayout_6 = QVBoxLayout(self.frame_9)
+        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+        self.splitter_2 = QSplitter(self.frame_9)
+        self.splitter_2.setObjectName(u"splitter_2")
+        self.splitter_2.setOrientation(Qt.Orientation.Vertical)
+        self.tabWidget = QTabWidget(self.splitter_2)
         self.tabWidget.setObjectName(u"tabWidget")
         self.tabWidget.setAcceptDrops(True)
         self.tab = QWidget()
@@ -61,7 +64,7 @@ class Ui_MainWindow(object):
         self.scrollArea_2.setWidgetResizable(True)
         self.scrollAreaWidgetContents_2 = QWidget()
         self.scrollAreaWidgetContents_2.setObjectName(u"scrollAreaWidgetContents_2")
-        self.scrollAreaWidgetContents_2.setGeometry(QRect(0, 0, 656, 307))
+        self.scrollAreaWidgetContents_2.setGeometry(QRect(0, 0, 477, 312))
         self.horizontalLayout_3 = QHBoxLayout(self.scrollAreaWidgetContents_2)
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.listWidget_files = QListWidget(self.scrollAreaWidgetContents_2)
@@ -98,19 +101,14 @@ class Ui_MainWindow(object):
         self.horizontalLayout_4.addWidget(self.frame_2)
 
         self.tabWidget.addTab(self.tab, "")
-        self.tab_2 = QWidget()
-        self.tab_2.setObjectName(u"tab_2")
-        self.horizontalLayout = QHBoxLayout(self.tab_2)
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.tabWidget.addTab(self.tab_2, "")
-
-        self.verticalLayout_4.addWidget(self.tabWidget)
-
-        self.horizontalSpacer = QSpacerItem(415, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.verticalLayout_4.addItem(self.horizontalSpacer)
-
-        self.frame_6 = QFrame(self.groupBox)
+        self.splitter_2.addWidget(self.tabWidget)
+        self.frame_8 = QFrame(self.splitter_2)
+        self.frame_8.setObjectName(u"frame_8")
+        self.frame_8.setFrameShape(QFrame.Shape.StyledPanel)
+        self.frame_8.setFrameShadow(QFrame.Shadow.Raised)
+        self.verticalLayout_4 = QVBoxLayout(self.frame_8)
+        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.frame_6 = QFrame(self.frame_8)
         self.frame_6.setObjectName(u"frame_6")
         self.frame_6.setFrameShape(QFrame.Shape.StyledPanel)
         self.frame_6.setFrameShadow(QFrame.Shadow.Raised)
@@ -126,17 +124,35 @@ class Ui_MainWindow(object):
         self.scrollArea_3.setWidgetResizable(True)
         self.scrollAreaWidgetContents_3 = QWidget()
         self.scrollAreaWidgetContents_3.setObjectName(u"scrollAreaWidgetContents_3")
-        self.scrollAreaWidgetContents_3.setGeometry(QRect(0, 0, 382, 330))
+        self.scrollAreaWidgetContents_3.setGeometry(QRect(0, 0, 294, 255))
         self.horizontalLayout_9 = QHBoxLayout(self.scrollAreaWidgetContents_3)
         self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
         self.groupBox_3 = QGroupBox(self.scrollAreaWidgetContents_3)
         self.groupBox_3.setObjectName(u"groupBox_3")
-        self.horizontalLayout_10 = QHBoxLayout(self.groupBox_3)
-        self.horizontalLayout_10.setObjectName(u"horizontalLayout_10")
+        self.verticalLayout = QVBoxLayout(self.groupBox_3)
+        self.verticalLayout.setObjectName(u"verticalLayout")
         self.textBrowser_log = QTextBrowser(self.groupBox_3)
         self.textBrowser_log.setObjectName(u"textBrowser_log")
 
-        self.horizontalLayout_10.addWidget(self.textBrowser_log)
+        self.verticalLayout.addWidget(self.textBrowser_log)
+
+        self.frame = QFrame(self.groupBox_3)
+        self.frame.setObjectName(u"frame")
+        self.frame.setFrameShape(QFrame.Shape.StyledPanel)
+        self.frame.setFrameShadow(QFrame.Shadow.Raised)
+        self.horizontalLayout_2 = QHBoxLayout(self.frame)
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.horizontalSpacer_3 = QSpacerItem(233, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_2.addItem(self.horizontalSpacer_3)
+
+        self.pushButton_stop = QPushButton(self.frame)
+        self.pushButton_stop.setObjectName(u"pushButton_stop")
+
+        self.horizontalLayout_2.addWidget(self.pushButton_stop)
+
+
+        self.verticalLayout.addWidget(self.frame)
 
 
         self.horizontalLayout_9.addWidget(self.groupBox_3)
@@ -148,12 +164,25 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_4.addWidget(self.frame_6)
 
-        self.pushButton_analyse = QPushButton(self.groupBox)
+        self.frame_7 = QFrame(self.frame_8)
+        self.frame_7.setObjectName(u"frame_7")
+        self.frame_7.setFrameShape(QFrame.Shape.StyledPanel)
+        self.frame_7.setFrameShadow(QFrame.Shadow.Raised)
+        self.horizontalLayout_10 = QHBoxLayout(self.frame_7)
+        self.horizontalLayout_10.setObjectName(u"horizontalLayout_10")
+        self.pushButton_analyse = QPushButton(self.frame_7)
         self.pushButton_analyse.setObjectName(u"pushButton_analyse")
 
-        self.verticalLayout_4.addWidget(self.pushButton_analyse)
+        self.horizontalLayout_10.addWidget(self.pushButton_analyse)
 
-        self.groupBox_4 = QGroupBox(self.groupBox)
+
+        self.verticalLayout_4.addWidget(self.frame_7)
+
+        self.splitter_2.addWidget(self.frame_8)
+
+        self.verticalLayout_6.addWidget(self.splitter_2)
+
+        self.groupBox_4 = QGroupBox(self.frame_9)
         self.groupBox_4.setObjectName(u"groupBox_4")
         self.gridLayout = QGridLayout(self.groupBox_4)
         self.gridLayout.setObjectName(u"gridLayout")
@@ -198,12 +227,15 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.pushButton_test_api, 2, 5, 1, 1)
 
 
-        self.verticalLayout_4.addWidget(self.groupBox_4)
+        self.verticalLayout_6.addWidget(self.groupBox_4)
 
 
-        self.horizontalLayout_7.addWidget(self.groupBox)
+        self.horizontalLayout_12.addWidget(self.frame_9)
 
-        self.groupBox_2 = QGroupBox(self.frame_5)
+
+        self.horizontalLayout.addWidget(self.groupBox)
+
+        self.groupBox_2 = QGroupBox(self.centralwidget)
         self.groupBox_2.setObjectName(u"groupBox_2")
         self.verticalLayout_5 = QVBoxLayout(self.groupBox_2)
         self.verticalLayout_5.setObjectName(u"verticalLayout_5")
@@ -265,16 +297,17 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_5.addWidget(self.frame_edit_code)
 
+        self.verticalLayout_5.setStretch(0, 5)
+        self.verticalLayout_5.setStretch(3, 2)
 
-        self.horizontalLayout_7.addWidget(self.groupBox_2)
+        self.horizontalLayout.addWidget(self.groupBox_2)
 
-
-        self.horizontalLayout_8.addWidget(self.frame_5)
-
+        self.horizontalLayout.setStretch(0, 5)
+        self.horizontalLayout.setStretch(1, 4)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1689, 33))
+        self.menubar.setGeometry(QRect(0, 0, 1192, 22))
         self.menu = QMenu(self.menubar)
         self.menu.setObjectName(u"menu")
         MainWindow.setMenuBar(self.menubar)
@@ -302,12 +335,12 @@ class Ui_MainWindow(object):
         self.pushButton_import.setText(QCoreApplication.translate("MainWindow", u"\u5bfc\u5165\u6587\u4ef6", None))
         self.pushButton_remove.setText(QCoreApplication.translate("MainWindow", u"\u79fb\u9664\u9009\u4e2d\u6587\u4ef6", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"\u4f20\u5165\u6570\u636e\u6587\u4ef6", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), "")
         self.plainTextEdit_query.setPlainText(QCoreApplication.translate("MainWindow", u"1. \u7b80\u8981\u63cf\u8ff0\u4f60\u4f20\u5165\u7684\u6587\u4ef6\u5206\u522b\u662f\u4ec0\u4e48\uff0c\u82e5\u662f\u8868\u683c\uff0c\u52a1\u5fc5\u63cf\u8ff0\u6e05\u695a\u884c\u540d\u4e0e\u5217\u540d\uff0c\u4ee5\u53ca\u6570\u636e\u9700\u8981\u5173\u6ce8\u54ea\u4e9b\u884c\u5217\u3002\n"
 "\n"
 "\n"
 "2. \u63cf\u8ff0\u4f60\u7684\u7ed8\u56fe\u9700\u6c42\uff0c\u4f8b\u5982\u505aT\u68c0\u9a8c\uff0c\u753b\u51fa\u5206\u5e03\u56fe\uff0c\u7b49\u9ad8\u7ebf\u56fe\uff0c\u6563\u70b9\u56fe\uff0c\u70ed\u56fe\u7b49\u3002\u4ee5\u53ca\u56fe\u7247\u5927\u5c0f\uff0cdpi\uff0c\u4fdd\u5b58\u4f4d\u7f6e", None))
         self.groupBox_3.setTitle(QCoreApplication.translate("MainWindow", u"Log", None))
+        self.pushButton_stop.setText(QCoreApplication.translate("MainWindow", u"\u505c\u6b62", None))
         self.pushButton_analyse.setText(QCoreApplication.translate("MainWindow", u"\u5f00\u59cb\u5206\u6790", None))
         self.groupBox_4.setTitle(QCoreApplication.translate("MainWindow", u"AI API\u4fe1\u606f", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"Base url", None))
@@ -322,3 +355,4 @@ class Ui_MainWindow(object):
         self.pushButton_send_edit_query.setText(QCoreApplication.translate("MainWindow", u"\u4fee\u6539\u4ee3\u7801", None))
         self.menu.setTitle(QCoreApplication.translate("MainWindow", u"\u5173\u4e8e\u672c\u8f6f\u4ef6", None))
     # retranslateUi
+

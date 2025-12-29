@@ -5,20 +5,96 @@ import queue
 import tempfile
 import subprocess
 import threading
-import signal
-from importlib import import_module
-from typing import Tuple
+import requests
+import zipfile
+import time
+import pandas as pd
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox, QFileDialog, QListWidgetItem, QListWidget, QSizePolicy, QPushButton
-from PySide6.QtCore import QThread, QObject, QTimer
+from typing import Tuple, List
 
+from PySide6.QtWidgets import (QApplication, QMainWindow, QMessageBox,
+                               QFileDialog, QListWidgetItem, QListWidget,
+                               QSizePolicy, QProgressDialog, QVBoxLayout,
+                               QLabel, QDialog, QDialogButtonBox)
+from PySide6.QtCore import QThread, QObject, QTimer, Signal, Qt
+
+# 根据你的导入方式选择
 # from deepseek import DeepSeek
 # from GUI import Ui_MainWindow
 from .deepseek import DeepSeek
 from .GUI import Ui_MainWindow
 
+
 # =====================================================
-# stdout / stderr 行缓冲重定向（关键修复点）
+# 表格文件处理函数
+# =====================================================
+def get_table_preview(file_path: str, max_rows: int = 15) -> str:
+    """
+    获取表格文件的前几行预览
+    支持的文件格式：.xlsx, .xls, .csv, .tsv, .txt
+    返回格式化的字符串
+    """
+    try:
+        # 根据文件扩展名选择读取方式
+        ext = os.path.splitext(file_path)[1].lower()
+
+        if ext in ['.xlsx', '.xls']:
+            # 读取Excel文件
+            df = pd.read_excel(file_path, nrows=max_rows)
+        elif ext == '.csv':
+            # 读取CSV文件
+            df = pd.read_csv(file_path, nrows=max_rows)
+        elif ext == '.tsv':
+            # 读取TSV文件
+            df = pd.read_csv(file_path, sep='\t', nrows=max_rows)
+        elif ext in ['.txt', '.data']:
+            # 尝试读取文本文件
+            try:
+                df = pd.read_csv(file_path, nrows=max_rows)
+            except:
+                # 如果标准读取失败，尝试读取前几行纯文本
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    lines = [f.readline().strip() for _ in range(max_rows)]
+                    lines = [line for line in lines if line]
+                return f"文本文件前{len(lines)}行预览：\n" + "\n".join(lines)
+        else:
+            return f"不支持的文件格式：{ext}"
+
+        # 获取实际行数
+        actual_rows = min(len(df), max_rows)
+
+        # 构建预览字符串
+        preview_lines = []
+        preview_lines.append(f"表格文件：{os.path.basename(file_path)}")
+        preview_lines.append(f"总行数：{len(df)}，列数：{len(df.columns)}")
+        preview_lines.append(f"前{actual_rows}行数据预览：")
+        preview_lines.append("=" * 50)
+
+        return "\n".join(preview_lines)
+
+    except Exception as e:
+        return f"读取表格文件时出错：{str(e)}"
+
+
+def get_file_preview(file_path: str) -> str:
+    """
+    根据文件类型获取预览信息
+    返回：文件路径 + 表格预览（如果有）
+    """
+    # 支持的表格文件扩展名
+    table_extensions = ['.xlsx', '.xls', '.csv', '.tsv', '.txt', '.data']
+
+    ext = os.path.splitext(file_path)[1].lower()
+
+    if ext in table_extensions:
+        preview = get_table_preview(file_path)
+        return f"文件路径：{file_path}\n{preview}\n请注意数据的格式，数据可能是文本格式需要进行转换\n"
+    else:
+        return f"文件路径：{file_path}\n"
+
+
+# =====================================================
+# stdout / stderr 行缓冲重定向
 # =====================================================
 class EmittingStream:
     def __init__(self, log_queue: queue.Queue):
@@ -33,7 +109,6 @@ class EmittingStream:
 
         while "\n" in self._buffer:
             line, self._buffer = self._buffer.split("\n", 1)
-            # 与终端行为一致（保留空行可删 strip 判断）
             if line.strip():
                 self.log_queue.put(line)
 
@@ -41,6 +116,178 @@ class EmittingStream:
         if self._buffer.strip():
             self.log_queue.put(self._buffer)
         self._buffer = ""
+
+
+# =====================================================
+# 升级 Worker（负责在后台执行升级）
+# =====================================================
+class UpgradeWorker(QObject):
+    """后台升级工作者"""
+    progress_signal = Signal(str)  # 进度更新信号
+    finished_signal = Signal(bool, str)  # 完成信号：成功/失败, 消息
+    canceled_signal = Signal()  # 取消信号
+
+    def __init__(self):
+        super().__init__()
+        self._stop_flag = False
+
+    def stop(self):
+        """停止升级"""
+        self._stop_flag = True
+        self.progress_signal.emit("🛑 正在停止升级...")
+
+    def run(self):
+        """执行升级任务"""
+        try:
+            # GitHub 上 DumbyDraw 的源码 zip 包 URL
+            url = 'https://github.com/Masterchiefm/DumbyDraw/archive/refs/heads/main.zip'
+
+            self.progress_signal.emit("🔗 正在连接到 GitHub...")
+            if self._stop_flag:
+                self.finished_signal.emit(False, "升级已完成或者被取消，请重启程序")
+                return
+
+            # 下载源代码压缩包
+            self.progress_signal.emit("📥 正在下载更新包...")
+            response = requests.get(url, stream=True, timeout=30)
+            if response.status_code != 200:
+                self.finished_signal.emit(False, f"下载失败，状态码: {response.status_code}")
+                return
+
+            # 获取总大小
+            total_size = int(response.headers.get('content-length', 0))
+            downloaded = 0
+
+            # 创建临时目录存储下载的压缩包
+            with tempfile.TemporaryDirectory() as temp_dir:
+                zip_file_path = os.path.join(temp_dir, 'DumbyDraw.zip')
+
+                with open(zip_file_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if self._stop_flag:
+                            self.finished_signal.emit(False, "升级已完成或者被取消，请重启程序")
+                            return
+
+                        if chunk:
+                            f.write(chunk)
+                            downloaded += len(chunk)
+                            if total_size > 0:
+                                percent = (downloaded / total_size) * 100
+                                self.progress_signal.emit(f"📥 下载中: {percent:.1f}%")
+
+                if self._stop_flag:
+                    self.finished_signal.emit(False, "升级已完成或者被取消，请重启程序")
+                    return
+
+                self.progress_signal.emit("📦 正在解压文件...")
+
+                with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+                    zip_ref.extractall(temp_dir)
+
+                if self._stop_flag:
+                    self.finished_signal.emit(False, "升级已完成或者被取消，请重启程序")
+                    return
+
+                # 获取解压后的路径
+                extracted_dir = os.path.join(temp_dir, 'DumbyDraw-main')
+
+                # 使用 sys.executable 获取当前的 Python 可执行路径
+                python_path = sys.executable
+
+                self.progress_signal.emit("⚙️ 正在安装/更新包...")
+
+                # 使用 pip 安装/升级 DumbyDraw 包
+                subprocess.run(
+                    [python_path, '-m', 'pip', 'install', '--upgrade', '--no-input', extracted_dir],
+                    check=True,
+                    capture_output=True,
+                    text=True
+                )
+
+                self.progress_signal.emit("✅ 安装完成")
+
+            self.finished_signal.emit(True, "✅ DumbyDraw 包已成功安装或升级")
+
+        except requests.RequestException as e:
+            self.finished_signal.emit(False, f"❌ 网络错误: {e}")
+        except subprocess.CalledProcessError as e:
+            self.finished_signal.emit(False, f"❌ 安装失败: {e.stderr if e.stderr else str(e)}")
+        except Exception as e:
+            self.finished_signal.emit(False, f"❌ 升级过程中出错: {e}")
+
+
+# =====================================================
+# 升级对话框
+# =====================================================
+class UpgradeDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("软件升级")
+        self.setModal(True)
+        self.resize(400, 200)
+
+        layout = QVBoxLayout()
+
+        self.status_label = QLabel("正在准备升级...")
+        self.status_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.status_label)
+
+        self.progress_label = QLabel("")
+        self.progress_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.progress_label)
+
+        # 按钮
+        button_box = QDialogButtonBox()
+        self.cancel_button = button_box.addButton("取消", QDialogButtonBox.RejectRole)
+        self.cancel_button.clicked.connect(self.cancel_upgrade)
+        layout.addWidget(button_box)
+
+        self.setLayout(layout)
+
+        self.upgrade_worker = None
+        self.upgrade_thread = None
+        self.upgrade_canceled = False
+
+    def start_upgrade(self):
+        """开始升级过程"""
+        self.upgrade_thread = QThread()
+        self.upgrade_worker = UpgradeWorker()
+        self.upgrade_worker.moveToThread(self.upgrade_thread)
+
+        # 连接信号
+        self.upgrade_worker.progress_signal.connect(self.update_progress)
+        self.upgrade_worker.finished_signal.connect(self.upgrade_finished)
+        self.upgrade_thread.started.connect(self.upgrade_worker.run)
+
+        # 启动线程
+        self.upgrade_thread.start()
+
+    def update_progress(self, message):
+        """更新进度显示"""
+        self.progress_label.setText(message)
+
+    def upgrade_finished(self, success, message):
+        """升级完成"""
+        if success:
+            self.status_label.setText("✅ 升级完成")
+            self.progress_label.setText(message)
+            self.cancel_button.setText("关闭")
+        else:
+            self.status_label.setText("❌ 升级失败")
+            self.progress_label.setText(message)
+            self.cancel_button.setText("关闭")
+
+        # 清理线程
+        if self.upgrade_thread:
+            self.upgrade_thread.quit()
+            self.upgrade_thread.wait()
+
+    def cancel_upgrade(self):
+        """取消升级"""
+        self.upgrade_canceled = True
+        if self.upgrade_worker:
+            self.upgrade_worker.stop()
+        self.reject()
 
 
 # =====================================================
@@ -67,7 +314,6 @@ class AnalyseWorker(QObject):
         try:
             print("🚀 开始调用 AI 接口")
 
-            # 检查停止标志
             if self._stop_flag:
                 print("⏹️ AI生成已被停止")
                 return
@@ -78,7 +324,6 @@ class AnalyseWorker(QObject):
                 API_key=self.api_key
             )
 
-            # 检查停止标志
             if self._stop_flag:
                 print("⏹️ AI生成已被停止")
                 return
@@ -89,7 +334,6 @@ class AnalyseWorker(QObject):
                 return_type="string"
             )
 
-            # 检查停止标志
             if self._stop_flag:
                 print("⏹️ AI生成已被停止")
                 return
@@ -104,7 +348,6 @@ class AnalyseWorker(QObject):
             if code.endswith("```"):
                 code = code[:-3]
 
-            # 检查停止标志
             if not self._stop_flag:
                 self.result_queue.put(code)
                 print("📦 代码已发送回主线程")
@@ -123,41 +366,35 @@ class CodeRunner:
         self.process = None
         self.running = False
         self._stop_flag = False
-        
+
     def run_code_in_background(self, code: str):
         """在后台进程中执行代码"""
         if self.running:
-            self.log_queue.put("⚠️ 已有代码正在运行，请等待完成")
             return
-            
+
         self.running = True
         self._stop_flag = False
         thread = threading.Thread(target=self._execute_code, args=(code,))
         thread.daemon = True
         thread.start()
-    
+
     def _execute_code(self, code: str):
         """实际执行代码的方法"""
         try:
-            # 创建临时文件
             with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8') as f:
                 f.write(code)
                 temp_file_path = f.name
-            
+
             self.log_queue.put(f"📝 临时文件已创建: {temp_file_path}")
-            
-            # 获取Python解释器路径
+
             python_exe = sys.executable
             self.log_queue.put(f"🐍 使用Python解释器: {python_exe}")
-            
-            
-            # 检查停止标志
+
             if self._stop_flag:
                 self.log_queue.put("⏹️ 代码执行已被取消")
                 self._cleanup_temp_file(temp_file_path)
                 return
-            
-            # 启动子进程执行代码
+
             self.log_queue.put(f"⏹️ 代码正在后台运行...")
             self.process = subprocess.Popen(
                 [python_exe, temp_file_path],
@@ -166,54 +403,45 @@ class CodeRunner:
                 text=True,
                 encoding='utf-8'
             )
-            
-            # 实时读取输出
+
             while True:
-                # 检查停止标志
                 if self._stop_flag:
                     self.log_queue.put("⏹️ 正在停止代码执行...")
                     self.process.terminate()
                     break
-                
-                # 读取标准输出
+
                 stdout_line = self.process.stdout.readline()
                 if stdout_line:
                     self.log_queue.put(stdout_line.rstrip('\n'))
-                
-                # 读取标准错误
+
                 stderr_line = self.process.stderr.readline()
                 if stderr_line:
-                    self.log_queue.put(f"❌ {stderr_line.rstrip('\n')}")
-                
-                # 检查进程是否结束
+                    e = stderr_line.rstrip('\n')
+                    self.log_queue.put(f"❌ {e}")
+
                 if self.process.poll() is not None:
-                    # 读取剩余输出
                     for line in self.process.stdout.readlines():
                         if line.strip():
                             self.log_queue.put(line.rstrip('\n'))
                     for line in self.process.stderr.readlines():
                         if line.strip():
-                            self.log_queue.put(f"❌ {line.rstrip('\n')}")
+                            e = line.rstrip('\n')
+                            self.log_queue.put(f"❌ {e}")
                     break
-            
-            # 检查停止标志
+
             if not self._stop_flag:
-                # 获取返回码
                 return_code = self.process.wait()
                 if return_code == 0:
                     self.log_queue.put("✅ 代码执行完成")
                 else:
                     self.log_queue.put(f"❌ 代码执行失败，返回码: {return_code}")
-            
-            # 清理临时文件
-            # self._cleanup_temp_file(temp_file_path)
-                
+
         except Exception as e:
             self.log_queue.put(f"❌ 执行代码时发生错误: {e}")
         finally:
             self.running = False
             self.process = None
-    
+
     def _cleanup_temp_file(self, temp_file_path: str):
         """清理临时文件"""
         try:
@@ -221,7 +449,7 @@ class CodeRunner:
             self.log_queue.put(f"🗑️ 临时文件已删除: {temp_file_path}")
         except Exception as e:
             self.log_queue.put(f"⚠️ 无法删除临时文件: {e}")
-    
+
     def stop_execution(self):
         """停止正在执行的代码"""
         if self.running:
@@ -288,6 +516,9 @@ class MainWindow(QMainWindow):
         self.ai_worker = None
         self.ai_thread = None
 
+        # ===== 升级相关 =====
+        self.upgrade_dialog = None
+
         # ===== 定时器 =====
         self.log_timer = QTimer(self)
         self.log_timer.timeout.connect(self.update_log)
@@ -297,6 +528,7 @@ class MainWindow(QMainWindow):
         self.result_timer.timeout.connect(self.check_result)
         self.result_timer.start(100)
 
+        # 更新文件列表小部件
         old_widget = self.ui.listWidget_files
         parent = old_widget.parent()
         layout = parent.layout()
@@ -309,7 +541,6 @@ class MainWindow(QMainWindow):
 
         layout.replaceWidget(old_widget, new_widget)
         old_widget.deleteLater()
-
         self.ui.listWidget_files = new_widget
 
         # ===== 隐藏修改代码区域 ====
@@ -324,41 +555,61 @@ class MainWindow(QMainWindow):
         self.ui.pushButton_remove.clicked.connect(self.remove_selection)
         self.ui.pushButton_send_edit_query.clicked.connect(self.edit_code)
         self.ui.pushButton_test_api.clicked.connect(self.check_connection)
-        
-        # ===== 添加停止按钮 =====
-        self.setup_stop_buttons()
+        self.ui.pushButton_stop.clicked.connect(self.stop_all_processes)
+        self.ui.actionupdate.triggered.connect(self.upgrade)
 
-    def setup_stop_buttons(self):
-        """设置停止按钮"""
-        # 可以在UI中手动添加一个停止按钮，或者使用现有按钮
-        # 这里展示两种方式：
-        
-        # 方式1：添加新的停止按钮（推荐）
-        try:
-            # 这里假设你在UI文件中已经添加了一个名为pushButton_stop的按钮
-            self.ui.pushButton_stop.clicked.connect(self.stop_all_processes)
-            self.ui.pushButton_stop.setEnabled(False)  # 初始不可用
-        except AttributeError:
-            # 如果UI中没有该按钮，可以动态创建一个
-            self.stop_button = QPushButton("停止所有进程", self)
-            self.stop_button.clicked.connect(self.stop_all_processes)
-            self.stop_button.setEnabled(False)
-            # 添加到现有布局中（这里需要根据你的UI结构调整位置）
-            # 例如：self.ui.verticalLayout.addWidget(self.stop_button)
-        
-        # 方式2：复用现有按钮（在运行时切换）
-        self.is_stopping = False
+        self.system_prompt = """你是一个python绘图代码生成工具，你能根据用户的输入直接生成代码。
+你输出的内容只能有完整的代码，不能有代码之外的其它东西。
+输出必须是 markdown ``` ``` 包裹的代码，之外不能有任何说明，说明只能是代码里的注释。
+禁止 if __name__ == "__main__",代码结尾不要带plt.close()，即使保存了图片，也要plt.show()。
+除非用户指定了其它语言或者字体，否则务必使用英文作为图注、图题。
+代码中的注释与用户输入的语言一致
+注意用户输入的第几第几是人类语言，是从1开始，而不是python的从0开始。
+你代码中可以用python内置工具以及以下的第三方工具：
+matplotlib==3.7.5
+seaborn
+pandas
+openpyxl
+pillow
+requests
+biopython
+numpy
+scipy
+cartopy
+你需要检查用的工具不在上表，如果不在，你需要在代码中使用try import，并在except中用sys.executable获取python路径，然后用python -m pip安装。并且指定用清华源https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+"""
+
+    def upgrade(self):
+        """在后台执行升级"""
+        print("🔄 开始升级...")
+
+        # 创建并显示升级对话框
+        self.upgrade_dialog = UpgradeDialog(self)
+        self.upgrade_dialog.start_upgrade()
+        self.upgrade_dialog.exec_()
+
+        # 对话框关闭后清理
+        if self.upgrade_dialog.upgrade_canceled:
+            print("⏹️ 升级已完成或被取消")
+        else:
+            print("✅ 升级过程完成")
+
+        self.upgrade_dialog = None
 
     def stop_all_processes(self):
         """停止所有正在运行的进程"""
         print("🛑 正在停止所有进程...")
-        
+
         # 停止AI生成
         self.stop_ai_generation()
-        
+
         # 停止代码执行
         self.stop_code_execution()
-        
+
+        # 停止升级（如果有）
+        if self.upgrade_dialog and self.upgrade_dialog.upgrade_worker:
+            self.upgrade_dialog.upgrade_worker.stop()
+
         print("✅ 已发送停止信号")
 
     def stop_ai_generation(self):
@@ -366,15 +617,14 @@ class MainWindow(QMainWindow):
         if self.ai_worker:
             self.ai_worker.stop()
             print("⏹️ AI生成已停止")
-            
+
         if self.ai_thread and self.ai_thread.isRunning():
-            # 等待线程安全结束
             self.ai_thread.quit()
-            self.ai_thread.wait(1000)  # 等待1秒
+            self.ai_thread.wait(1000)
             if self.ai_thread.isRunning():
                 self.ai_thread.terminate()
             print("🧵 AI线程已停止")
-            
+
         self.ai_worker = None
         self.ai_thread = None
 
@@ -383,27 +633,36 @@ class MainWindow(QMainWindow):
         self.code_runner.stop_execution()
 
     def add_drag_file(self):
+        """已通过dropEvent实现"""
+        pass
+
+    def build_file_previews(self, file_paths: List[str]) -> str:
         """
-        识别拖到self.ui.listWidget_files的文件/文件夹，获得它们的路径。然后把这些路径添加到self.ui.listWidget_files里
-        :return:
+        构建文件预览信息
+        返回：包含所有文件路径和表格预览的字符串
         """
-        pass  # 已在dropEvent中实现
+        if not file_paths:
+            return ""
+
+        preview_parts = ["用户提供了以下文件，请根据需要读取："]
+
+        for i, file_path in enumerate(file_paths, 1):
+            preview = get_file_preview(file_path)
+            preview_parts.append(f"\n【文件{i}】")
+            preview_parts.append(preview)
+
+        return "\n".join(preview_parts)
 
     def edit_code(self):
         original_code = self.ui.plainTextEdit_code.toPlainText()
         user_query = self.ui.plainTextEdit_query.toPlainText()
-        system_prompt = """你是一个python绘图代码生成工具，你能根据用户的输入直接生成代码。
-        你输出的内容只能有代码，不能有代码之外的其它东西。
-        输出必须是 markdown ``` ``` 包裹的代码。
-        禁止 if __name__ == "__main__",代码结尾不要带plt.close()，即使保存了图片，也要plt.show()。
-        除非用户指定了其它语言或者字体，否则务必使用英文作为图注、图题。
-        代码中的注释与用户输入的语言一致。
-        注意用户输入的第几第几是人类语言，是从1开始，而不是python的从0开始。
-        """
-        # 获取 listWidget_files 中的文件
+        system_prompt = self.system_prompt
         files = [self.ui.listWidget_files.item(i).text() for i in range(self.ui.listWidget_files.count())]
+
+        # 构建文件预览信息
         if files:
-            system_prompt += f"用户还提供了以下文件/文件夹和其路径，需要的时候在代码中写入读取对应文件的代码。路径如下：{files}"
+            file_previews = self.build_file_previews(files)
+            system_prompt += f"\n\n{file_previews}"
 
         edit_query = self.ui.plainTextEdit_edit_query.toPlainText()
         user_query = f"你需要修改代码，这是原始需求：{user_query}, 这是原始代码：{original_code},这是修改的需求：{edit_query}"
@@ -423,15 +682,9 @@ class MainWindow(QMainWindow):
         self.ai_worker.moveToThread(self.ai_thread)
         self.ai_thread.started.connect(self.ai_worker.run)
         self.ai_thread.start()
-        
-        # 启用停止按钮
-        self.enable_stop_button(True)
 
     def import_files(self):
-        """
-        打开一个文件选择窗口， 可以多选文件。然后返回这堆文件的绝对路径。
-        然后将这个路径列表更新到ui.listwidget_files中
-        """
+        """导入文件"""
         file_urls, _ = QFileDialog.getOpenFileUrls(self, "选择文件")
         for url in file_urls:
             path = url.toLocalFile()
@@ -446,9 +699,7 @@ class MainWindow(QMainWindow):
         return False
 
     def remove_selection(self):
-        """
-        读取现在ui.listwidget_files中选中了哪些item，然后将选中的item从列表中去除并更新列表。
-        """
+        """移除选中的文件"""
         for item in self.ui.listWidget_files.selectedItems():
             self.ui.listWidget_files.takeItem(self.ui.listWidget_files.row(item))
 
@@ -458,9 +709,6 @@ class MainWindow(QMainWindow):
         else:
             self.ui.frame_edit_code.hide()
 
-    # ---------------------
-    # 按行刷新日志
-    # ---------------------
     def update_log(self):
         lines = []
         while not self.log_queue.empty():
@@ -469,9 +717,6 @@ class MainWindow(QMainWindow):
         if lines:
             self.ui.textBrowser_log.append("\n".join(lines))
 
-    # ---------------------
-    # 接收生成代码并执行
-    # ---------------------
     def check_result(self):
         if self.result_queue.empty():
             return
@@ -479,68 +724,27 @@ class MainWindow(QMainWindow):
         code = self.result_queue.get()
         self.ui.plainTextEdit_code.setPlainText(code)
 
-        # 完成AI生成后禁用停止按钮
-        self.enable_stop_button(False)
-        
-        # 检查是否需要自动执行
         try:
-            if self.ui.checkBox_auto_execute.isChecked():
-                print("▶ 在后台进程中执行生成代码")
-                # 在后台进程中执行代码
-                self.code_runner.run_code_in_background(code)
+            self.code_runner.run_code_in_background(code)
         except Exception as e:
             print(e)
-            self.code_runner.run_code_in_background(code)
-
 
     def direct_run(self):
         code = self.ui.plainTextEdit_code.toPlainText()
         print("▶ 在后台进程中执行代码")
-        # 在后台进程中执行代码
         self.code_runner.run_code_in_background(code)
 
-    def enable_stop_button(self, enabled: bool):
-        """启用或禁用停止按钮"""
-        try:
-            self.ui.pushButton_stop.setEnabled(enabled)
-        except AttributeError:
-            # 如果使用动态创建的按钮
-            if hasattr(self, 'stop_button'):
-                self.stop_button.setEnabled(enabled)
-
-    # ---------------------
-    # 启动后台分析
-    # ---------------------
     def generate_code(self):
         user_query = self.ui.plainTextEdit_query.toPlainText()
-        system_prompt = """你是一个python绘图代码生成工具，你能根据用户的输入直接生成代码。
-你输出的内容只能有完整的代码，不能有代码之外的其它东西。
-输出必须是 markdown ``` ``` 包裹的代码，之外不能有任何说明，说明只能是代码里的注释。
-禁止 if __name__ == "__main__",代码结尾不要带plt.close()，即使保存了图片，也要plt.show()。
-除非用户指定了其它语言或者字体，否则务必使用英文作为图注、图题。
-代码中的注释与用户输入的语言一致
-注意用户输入的第几第几是人类语言，是从1开始，而不是python的从0开始。
-你代码中可以用python内置工具以及以下的第三方工具：
-matplotlib==3.7.5
-seaborn
-pandas
-openpyxl
-pillow
-requests
-biopython
-numpy
-scipy
-cartopy
-如果用的工具不在上表，就先try import，如果没有的话，就用sys.executable获取python路径，然后用python -m pip安装。并且指定用清华源https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
-"""
-        # 获取 listWidget_files 中的文件
+        system_prompt = self.system_prompt + "注意需要使用的包是否需要安装"
         files = [self.ui.listWidget_files.item(i).text() for i in range(self.ui.listWidget_files.count())]
+
+        # 构建文件预览信息
         if files:
-            system_prompt += f"用户还提供了以下文件/文件夹和其路径，需要的时候在代码中写入读取对应文件的代码,并注意处理路径中的空格。路径如下：{files}"
+            file_previews = self.build_file_previews(files)
+            system_prompt += f"\n\n{file_previews}"
 
         print("🧵 启动后台线程")
-
-        # 停止可能正在进行的AI生成
         self.stop_ai_generation()
 
         self.ai_thread = QThread(self)
@@ -554,27 +758,14 @@ cartopy
         )
 
         self.ai_worker.moveToThread(self.ai_thread)
-        
-        # 连接线程完成的信号
         self.ai_thread.started.connect(self.ai_worker.run)
-        self.ai_thread.finished.connect(lambda: self.enable_stop_button(False))
-        
         self.ai_thread.start()
-        
-        # 启用停止按钮
-        self.enable_stop_button(True)
 
-    # ---------------------
-    # 配置文件
-    # ---------------------
     def get_config(self) -> Tuple[str, str, str]:
-        # 获取家目录下的配置文件路径
         config_path = os.path.expanduser("~/.dumbdrawphd_config.json")
 
         if not os.path.exists(config_path):
-            # 确保家目录存在
             os.makedirs(os.path.dirname(config_path), exist_ok=True)
-
             with open(config_path, "w", encoding="utf-8") as f:
                 json.dump({
                     "baseurl": "",
@@ -609,9 +800,6 @@ cartopy
             print(f"❌ 保存失败: {e}")
 
     def check_connection(self):
-        """
-        测试 API 连接：直接问 AI 你是谁，无需生成代码运行
-        """
         user_query = '画一个正弦函数'
         system_prompt = """你是一个python绘图代码生成工具，你能根据用户的输入直接生成代码。
            你输出的内容只能有代码，不能有代码之外的其它东西。
@@ -622,8 +810,6 @@ cartopy
            """
 
         print("🧵 启动后台线程")
-
-        # 停止可能正在进行的AI生成
         self.stop_ai_generation()
 
         self.ai_thread = QThread(self)
@@ -638,12 +824,7 @@ cartopy
 
         self.ai_worker.moveToThread(self.ai_thread)
         self.ai_thread.started.connect(self.ai_worker.run)
-        self.ai_thread.finished.connect(lambda: self.enable_stop_button(False))
-        
         self.ai_thread.start()
-        
-        # 启用停止按钮
-        self.enable_stop_button(True)
 
 
 # =====================================================
