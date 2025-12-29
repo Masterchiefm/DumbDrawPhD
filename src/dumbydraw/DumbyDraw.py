@@ -530,6 +530,8 @@ requests
 biopython
 numpy
 scipy
+cartopy
+如果用的工具不在上表，就先try import，如果没有的话，就用sys.executable获取python路径，然后用python -m pip安装。并且指定用清华源https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
 """
         # 获取 listWidget_files 中的文件
         files = [self.ui.listWidget_files.item(i).text() for i in range(self.ui.listWidget_files.count())]
