@@ -3,6 +3,7 @@ import sys
 import os
 import json
 import queue
+import tempfile
 from importlib import import_module
 from typing import Tuple
 
@@ -44,7 +45,7 @@ class EmittingStream:
 
 
 # =====================================================
-# 后台 Worker（只负责生成代码）
+# 后台 Worker（负责生成代码）
 # =====================================================
 class AnalyseWorker(QObject):
     def __init__(self, baseurl, model, api_key, user_query, system_prompt, result_queue):
@@ -55,6 +56,12 @@ class AnalyseWorker(QObject):
         self.user_query = user_query
         self.system_prompt = system_prompt
         self.result_queue = result_queue
+        # # 获取临时文件夹路径
+        # temp_dir = tempfile.gettempdir()
+        # # 拼接路径
+        # self.temp_file_path = os.path.join(temp_dir, "tmp.py")
+        # # python解释器路径
+        # self.executable = sys.executable
 
     def run(self):
         try:
