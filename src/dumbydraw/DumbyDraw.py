@@ -397,7 +397,8 @@ class MainWindow(QMainWindow):
         输出必须是 markdown ``` ``` 包裹的代码。
         禁止 if __name__ == "__main__",代码结尾不要带plt.close()，即使保存了图片，也要plt.show()。
         除非用户指定了其它语言或者字体，否则务必使用英文作为图注、图题。
-        代码中的注释与用户输入的语言一致
+        代码中的注释与用户输入的语言一致。
+        注意用户输入的第几第几是人类语言，是从1开始，而不是python的从0开始。
         """
         # 获取 listWidget_files 中的文件
         files = [self.ui.listWidget_files.item(i).text() for i in range(self.ui.listWidget_files.count())]
@@ -518,6 +519,7 @@ class MainWindow(QMainWindow):
 禁止 if __name__ == "__main__",代码结尾不要带plt.close()，即使保存了图片，也要plt.show()。
 除非用户指定了其它语言或者字体，否则务必使用英文作为图注、图题。
 代码中的注释与用户输入的语言一致
+注意用户输入的第几第几是人类语言，是从1开始，而不是python的从0开始。
 你代码中可以用python内置工具以及以下的第三方工具：
 matplotlib==3.7.5
 seaborn
