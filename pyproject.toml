@@ -27,6 +27,7 @@ dependencies = [
     "scikit-image",
     "scipy",
     "opencv-python",
+    "cartopy",
     "openai"
 ]
 
