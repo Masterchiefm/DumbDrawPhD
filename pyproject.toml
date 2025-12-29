@@ -31,7 +31,7 @@ dependencies = [
 ]
 
 [project.scripts]
-DumbyDraw = "DumbyDraw.DumbyDraw:main"
+DumbyDraw = "dumbydraw.DumbyDraw:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
