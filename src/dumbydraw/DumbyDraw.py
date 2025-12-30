@@ -9,6 +9,8 @@ import requests
 import zipfile
 import time
 import pandas as pd
+import argparse  # 新增：用于处理命令行参数
+import atexit    # 新增：用于程序退出时清理
 
 from typing import Tuple, List
 
@@ -126,6 +128,7 @@ class UpgradeWorker(QObject):
     progress_signal = Signal(str)  # 进度更新信号
     finished_signal = Signal(bool, str)  # 完成信号：成功/失败, 消息
     canceled_signal = Signal()  # 取消信号
+    need_restart_signal = Signal(str)  # 新增：需要重启的信号，包含重启脚本路径
 
     def __init__(self):
         super().__init__()
@@ -190,30 +193,76 @@ class UpgradeWorker(QObject):
 
                 # 获取解压后的路径
                 extracted_dir = os.path.join(temp_dir, 'DumbyDraw-main')
-
-                # 使用 sys.executable 获取当前的 Python 可执行路径
-                python_path = sys.executable
-
-                self.progress_signal.emit("⚙️ 正在安装/更新包...")
-
-                # 使用 pip 安装/升级 DumbyDraw 包
-                subprocess.run(
-                    [python_path, '-m', 'pip', 'install', '--upgrade', '--no-input', extracted_dir],
-                    check=True,
-                    capture_output=True,
-                    text=True
-                )
-
-                self.progress_signal.emit("✅ 安装完成")
-
-            self.finished_signal.emit(True, "✅ DumbyDraw 包已成功安装或升级")
+                
+                # 创建升级脚本（关键修改）
+                self.progress_signal.emit("⚙️ 正在创建升级脚本...")
+                
+                restart_script = self.create_restart_script(extracted_dir)
+                
+                self.progress_signal.emit("✅ 升级脚本已创建，准备重启程序...")
+                
+                # 发送信号表示需要重启
+                self.need_restart_signal.emit(restart_script)
+                
+                self.finished_signal.emit(True, "✅ 升级准备完成，程序即将重启")
 
         except requests.RequestException as e:
             self.finished_signal.emit(False, f"❌ 网络错误: {e}")
-        except subprocess.CalledProcessError as e:
-            self.finished_signal.emit(False, f"❌ 安装失败: {e.stderr if e.stderr else str(e)}")
         except Exception as e:
             self.finished_signal.emit(False, f"❌ 升级过程中出错: {e}")
+
+    def create_restart_script(self, extracted_dir: str) -> str:
+        """
+        创建升级和重启的脚本
+        关键：这个脚本将在主程序退出后运行，不会受到文件锁定的影响
+        """
+        # 创建重启脚本
+        if sys.platform == "win32":
+            script_content = f'''@echo off
+echo 等待主程序退出...
+timeout /t 3 /nobreak >nul
+
+echo 正在升级 DumbyDraw...
+"{sys.executable}" -m pip install --upgrade --no-index --find-links="{extracted_dir}" .
+if %ERRORLEVEL% NEQ 0 (
+    echo 升级失败，正在尝试使用普通方式安装...
+    "{sys.executable}" -m pip install --upgrade --no-input "{extracted_dir}"
+)
+
+echo 升级完成，重启主程序...
+cd /d "{os.getcwd()}"
+"{sys.executable}" -m DumbyDraw
+pause'''
+            script_ext = ".bat"
+        else:
+            script_content = f'''#!/bin/bash
+echo "等待主程序退出..."
+sleep 3
+
+echo "正在升级 DumbyDraw..."
+"{sys.executable}" -m pip install --upgrade --no-index --find-links="{extracted_dir}" .
+
+if [ $? -ne 0 ]; then
+    echo "升级失败，正在尝试使用普通方式安装..."
+    "{sys.executable}" -m pip install --upgrade --no-input "{extracted_dir}"
+fi
+
+echo "升级完成，重启主程序..."
+cd "{os.getcwd()}"
+"{sys.executable}" -m DumbyDraw'''
+            script_ext = ".sh"
+
+        # 保存脚本到临时文件
+        temp_script = os.path.join(tempfile.gettempdir(), f"dumbydraw_upgrade_{int(time.time())}{script_ext}")
+        
+        with open(temp_script, 'w', encoding='utf-8') as f:
+            f.write(script_content)
+        
+        # 在Unix-like系统上设置执行权限
+        if sys.platform != "win32":
+            os.chmod(temp_script, 0o755)
+        
+        return temp_script
 
 
 # =====================================================
@@ -224,7 +273,7 @@ class UpgradeDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("软件升级")
         self.setModal(True)
-        self.resize(400, 200)
+        self.resize(400, 300)  # 增加高度以显示更多信息
 
         layout = QVBoxLayout()
 
@@ -235,6 +284,11 @@ class UpgradeDialog(QDialog):
         self.progress_label = QLabel("")
         self.progress_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.progress_label)
+        
+        self.restart_label = QLabel("升级后程序将自动重启\n请保存好您的工作")
+        self.restart_label.setAlignment(Qt.AlignCenter)
+        self.restart_label.setStyleSheet("color: red; font-weight: bold;")
+        layout.addWidget(self.restart_label)
 
         # 按钮
         button_box = QDialogButtonBox()
@@ -247,6 +301,7 @@ class UpgradeDialog(QDialog):
         self.upgrade_worker = None
         self.upgrade_thread = None
         self.upgrade_canceled = False
+        self.restart_script = None  # 存储重启脚本路径
 
     def start_upgrade(self):
         """开始升级过程"""
@@ -257,6 +312,7 @@ class UpgradeDialog(QDialog):
         # 连接信号
         self.upgrade_worker.progress_signal.connect(self.update_progress)
         self.upgrade_worker.finished_signal.connect(self.upgrade_finished)
+        self.upgrade_worker.need_restart_signal.connect(self.handle_restart)
         self.upgrade_thread.started.connect(self.upgrade_worker.run)
 
         # 启动线程
@@ -271,7 +327,11 @@ class UpgradeDialog(QDialog):
         if success:
             self.status_label.setText("✅ 升级完成")
             self.progress_label.setText(message)
-            self.cancel_button.setText("关闭")
+            self.cancel_button.setText("立即重启")
+            
+            # 修改取消按钮为重启按钮
+            self.cancel_button.disconnect()
+            self.cancel_button.clicked.connect(self.restart_now)
         else:
             self.status_label.setText("❌ 升级失败")
             self.progress_label.setText(message)
@@ -281,6 +341,17 @@ class UpgradeDialog(QDialog):
         if self.upgrade_thread:
             self.upgrade_thread.quit()
             self.upgrade_thread.wait()
+
+    def handle_restart(self, restart_script: str):
+        """处理重启请求"""
+        self.restart_script = restart_script
+        self.parent().restart_script = restart_script  # 将脚本路径传递给主窗口
+
+    def restart_now(self):
+        """立即重启程序"""
+        self.accept()  # 关闭对话框
+        if self.parent():
+            self.parent().initiate_restart()  # 调用主窗口的重启方法
 
     def cancel_upgrade(self):
         """取消升级"""
@@ -494,11 +565,16 @@ class FileDropListWidget(QListWidget):
 # 主窗口
 # =====================================================
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, restart_script=None):
         super().__init__()
         self.__version__ = "1.4"
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        
+        # 新增：处理重启脚本（如果存在）
+        self.restart_script = restart_script
+        if restart_script:
+            self.handle_pending_restart()
 
         self.get_config()
 
@@ -519,6 +595,7 @@ class MainWindow(QMainWindow):
 
         # ===== 升级相关 =====
         self.upgrade_dialog = None
+        self.pending_restart = False  # 新增：标记是否需要重启
 
         # ===== 定时器 =====
         self.log_timer = QTimer(self)
@@ -558,6 +635,9 @@ class MainWindow(QMainWindow):
         self.ui.pushButton_test_api.clicked.connect(self.check_connection)
         self.ui.pushButton_stop.clicked.connect(self.stop_all_processes)
         self.ui.actionupdate.triggered.connect(self.upgrade)
+        
+        # 注册退出时的清理函数
+        atexit.register(self.cleanup_on_exit)
 
         self.system_prompt = """你是一个python绘图代码生成工具，你能根据用户的输入直接生成代码。
 你输出的内容只能有完整的代码，不能有代码之外的其它东西。
@@ -580,6 +660,48 @@ cartopy
 你需要检查用的工具不在上表，如果不在，你需要在代码中使用try import，并在except中用sys.executable获取python路径，然后用python -m pip安装。并且指定用清华源https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
 """
 
+    def handle_pending_restart(self):
+        """处理挂起的重启（清除旧的脚本）"""
+        print(f"🧹 清除旧的升级脚本: {self.restart_script}")
+        try:
+            if os.path.exists(self.restart_script):
+                os.remove(self.restart_script)
+        except Exception as e:
+            print(f"⚠️ 无法删除旧脚本: {e}")
+
+    def cleanup_on_exit(self):
+        """程序退出时的清理函数"""
+        if self.pending_restart and self.restart_script:
+            print("🔁 正在执行升级脚本...")
+            try:
+                if sys.platform == "win32":
+                    subprocess.Popen([
+                        "cmd.exe",
+                        "/c",
+                        "start",
+                        "cmd.exe",
+                        "/c",
+                        self.restart_script
+                    ], shell=True)
+                else:
+                    subprocess.Popen([
+                        "nohup",
+                        "bash",
+                        self.restart_script
+                    ], shell=False, start_new_session=True)
+            except Exception as e:
+                print(f"❌ 启动升级脚本失败: {e}")
+
+    def initiate_restart(self):
+        """启动重启流程"""
+        print("🔁 准备重启程序...")
+        self.pending_restart = True
+        if hasattr(self, 'restart_script') and self.restart_script:
+            print(f"📜 将使用脚本: {self.restart_script}")
+        
+        # 关闭主窗口
+        self.close()
+
     def upgrade(self):
         """在后台执行升级"""
         print("🔄 开始升级...")
@@ -591,7 +713,7 @@ cartopy
 
         # 对话框关闭后清理
         if self.upgrade_dialog.upgrade_canceled:
-            print("⏹️ 升级已完成或被取消")
+            print("⏹️ 升级已取消")
         else:
             print("✅ 升级过程完成")
 
@@ -893,8 +1015,22 @@ cartopy
 # main
 # =====================================================
 def main():
+    # 解析命令行参数（用于处理重启后清理）
+    parser = argparse.ArgumentParser(description='DumbyDraw 绘图工具')
+    parser.add_argument('--cleanup-script', type=str, help='清理旧的升级脚本')
+    args = parser.parse_args()
+    
+    # 清理旧的升级脚本（如果有）
+    if args.cleanup_script:
+        try:
+            if os.path.exists(args.cleanup_script):
+                os.remove(args.cleanup_script)
+                print(f"🧹 已清理旧脚本: {args.cleanup_script}")
+        except Exception as e:
+            print(f"⚠️ 清理旧脚本失败: {e}")
+    
     app = QApplication(sys.argv)
-    win = MainWindow()
+    win = MainWindow(restart_script=args.cleanup_script if args.cleanup_script else None)
     win.show()
     sys.exit(app.exec())
 
