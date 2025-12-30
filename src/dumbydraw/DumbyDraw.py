@@ -743,6 +743,7 @@ cartopy
         # 构建文件预览信息
         if files:
             file_previews = self.build_file_previews(files)
+            print(f"file_previews:\n{file_previews}")
             system_prompt += f"\n\n{file_previews}"
 
         print("🧵 启动后台线程")
