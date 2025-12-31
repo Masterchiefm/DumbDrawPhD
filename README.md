@@ -8,18 +8,20 @@
 再也不用担心被老板骂"图都不会画"啦！只要把数据文件拖进来，用**人话**告诉本喵你想画什么，AI就会帮你生成代码并运行~
 
 ## 示例
-1. 随便画点什么
+### 1. 随便画点什么
    <img width="1117" height="900" alt="image" src="https://github.com/user-attachments/assets/402de58c-cd33-4767-92ab-2dd85def5828" />
 
-2. 给我处理测序数据
+### 2. 给我处理测序数据
 <img width="1193" height="956" alt="image" src="https://github.com/user-attachments/assets/27906c40-6ca1-40ae-8a62-6d27b644f0b0" />
 
 
-3. 给我画信号热图
+### 3. 给我画信号热图
+<img width="1445" height="927" alt="image" src="https://github.com/user-attachments/assets/caac80af-6ac0-471a-adae-e94a13537017" />
 
 
-4. 给我把南极站标出来
-   
+### 4. 给我把南极站标出来
+   <img width="1559" height="881" alt="image" src="https://github.com/user-attachments/assets/1562bfce-fb9e-46be-a518-9ce04444f98a" />
+
 
 
 ## 为什么需要这个？😼
