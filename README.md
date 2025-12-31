@@ -50,7 +50,7 @@ DumbyDraw
 这样就能运行啦！
 
 ### 使用
-首先设置AI的API，AI可不是免费的哦！可以用deepseek,chatgpt等api，你有哪个用哪个。
+首先设置AI的API，AI可不是免费的哦！可以用deepseek,chatgpt等api，你有哪个用哪个。（本喵用的是deepseek-V3.2，思考模型表现挺不错的）
 如果没有，这是我在SiliconFlow的邀请链接，你自己注册一个就行，送十几块钱的API费用呢。
 https://cloud.siliconflow.cn/i/Su2ao83G
 
