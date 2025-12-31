@@ -32,80 +32,6 @@ from .GUI import Ui_MainWindow
 
 
 # =====================================================
-# 表格文件处理函数
-# =====================================================
-def get_table_preview(file_path: str, max_rows: int = 15) -> str:
-    """
-    获取表格文件的前几行预览
-    支持的文件格式：.xlsx, .xls, .csv, .tsv, .txt
-    返回格式化的字符串
-    """
-    try:
-        # 根据文件扩展名选择读取方式
-        ext = os.path.splitext(file_path)[1].lower()
-
-        if ext in ['.xlsx', '.xls']:
-            # 读取Excel文件
-            df = pd.read_excel(file_path)
-        elif ext == '.csv':
-            # 读取CSV文件
-            df = pd.read_csv(file_path)
-        elif ext == '.tsv':
-            # 读取TSV文件
-            df = pd.read_csv(file_path, sep='\t')
-        elif ext in ['.txt', '.data']:
-            # 尝试读取文本文件
-            try:
-                df = pd.read_csv(file_path)
-            except:
-                # 如果标准读取失败，尝试读取前几行纯文本
-                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                    lines = [f.readline().strip() for _ in range(max_rows)]
-                    lines = [line for line in lines if line]
-                return f"文本文件前{len(lines)}行预览：\n" + "\n".join(lines)
-        else:
-            return f"不支持的文件格式：{ext}"
-
-        # 获取实际行数
-        actual_rows = min(len(df), max_rows)
-
-        # 构建预览字符串
-        preview_lines = []
-        preview_lines.append(f"表格文件：{os.path.basename(file_path)}")
-        preview_lines.append(f"总行数：{len(df)}，列数：{len(df.columns)}")
-        preview_lines.append(f"前{max_rows}行数据预览：")
-        preview_lines.append("=" * 50)
-        
-        # 添加数据行
-        preview_lines.append(df.head(max_rows).to_string(index=False))
-        
-        return "\n".join(preview_lines)
-
-    except Exception as e:
-        return f"读取表格文件时出错：{str(e)}"
-
-
-def get_file_preview(file_path: str) -> str:
-    """
-    根据文件类型获取预览信息
-    返回：
-    1. 对于表格文件：返回 "文件路径：{file_path}\n{preview}\n请注意数据的格式，数据可能是文本格式需要进行转换\n"
-    2. 对于非表格文件：只返回文件绝对路径
-    """
-    # 支持的表格文件扩展名
-    table_extensions = ['.xlsx', '.xls', '.csv', '.tsv', '.txt', '.data']
-
-    ext = os.path.splitext(file_path)[1].lower()
-
-    if ext in table_extensions:
-        preview = get_table_preview(file_path)
-        return f"文件路径：{file_path}\n{preview}\n请注意数据的格式，数据可能是文本格式需要进行转换\n"
-    else:
-        # 非表格文件，只返回绝对路径
-        return f"\n{file_path}"
-
-
-# =====================================================
 # stdout / stderr 行缓冲重定向
 # =====================================================
 class EmittingStream:
@@ -580,7 +506,7 @@ class AnalyseWorker(QObject):
                 model=self.model,
                 API_key=self.api_key
             )
-
+            print(f"model={self.model}")
             if self._stop_flag:
                 print("⏹️ AI生成已被停止")
                 return
@@ -753,7 +679,7 @@ class FileDropListWidget(QListWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.__version__ = "1.5"  # 更新版本号
+        self.__version__ = "1.5.1"  # 更新版本号
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
@@ -823,8 +749,8 @@ class MainWindow(QMainWindow):
 你输出的内容只能有完整的代码，不能有代码之外的其它东西。
 输出必须是 markdown ``` ``` 包裹的代码，之外不能有任何说明，说明只能是代码里的注释。
 禁止 if __name__ == "__main__",代码结尾不要带plt.close()，即使保存了图片，也要plt.show().
-尽量只有一次plt.show(), 若图较少的话就把需要生成的图做成一张大图和2~4张子图。
-除非用户指定了其它语言或者字体，否则务必使用英文作为图注、图题。
+尽量只有一次plt.show(), 若图少于4，尽量合成一张大图
+除非用户指定了其它语言或者字体，否则务必使用英文作为图注、图题。中文一定要注意字体。
 代码中的注释与用户输入的语言一致
 注意用户输入的第几第几是人类语言，是从1开始，而不是python的从0开始
 如果有双端测序需要拼接，一定要处理中间overlap而不是直接相加
@@ -952,34 +878,11 @@ cartopy
         """停止代码执行"""
         self.code_runner.stop_execution()
 
-    def add_drag_file(self):
-        """已通过dropEvent实现"""
-        pass
 
-    def build_file_previews(self, file_paths: List[str]) -> str:
-        """
-        构建文件预览信息
-        返回：包含所有文件路径和表格预览的字符串
-        """
-        if not file_paths:
-            return ""
 
-        preview_parts = ["用户提供了以下文件，请根据需要读取："]
-
-        for i, file_path in enumerate(file_paths, 1):
-            preview = get_file_preview(file_path)
-            # 检查是否为表格文件（包含预览内容）
-            if os.path.splitext(file_path)[1].lower() in ['.xlsx', '.xls', '.csv', '.tsv', '.txt', '.data']:
-                preview_parts.append(f"\n【文件{i}】")
-                preview_parts.append(preview)
-            else:
-                # 非表格文件，只显示路径
-                preview_parts.append(f"\n【文件{i}】")
-                preview_parts.append(f"文件路径：{preview}")
-
-        return "\n".join(preview_parts)
 
     def edit_code(self):
+        self.ui.textBrowser_log.clear()
         original_code = self.ui.plainTextEdit_code.toPlainText()
         user_query = self.ui.plainTextEdit_query.toPlainText()
         system_prompt = self.system_prompt
@@ -1002,6 +905,7 @@ cartopy
         user_query = f"你需要修改代码，这是原始需求：{user_query}, 这是原始代码：{original_code},这是修改的需求：{edit_query}"
 
         print("🧵 启动后台线程")
+
 
         self.ai_thread = QThread(self)
         self.ai_worker = AnalyseWorker(
@@ -1069,6 +973,7 @@ cartopy
         self.code_runner.run_code_in_background(code)
 
     def generate_code(self):
+        self.ui.textBrowser_log.clear()
         user_query = self.ui.plainTextEdit_query.toPlainText()
         system_prompt = self.system_prompt + "注意需要使用的包是否需要安装"
         table_info = self.detect_table_files()
