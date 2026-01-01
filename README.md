@@ -73,15 +73,19 @@ DumbyDraw
 这样就能运行啦！
 
 ### 使用
-首先设置AI的API，AI可不是免费的哦！可以用deepseek,chatgpt等api，你有哪个用哪个。（本喵用的是deepseek-V3.2，思考模型表现挺不错的）
+首先设置AI的API，AI可不是免费的哦！可以用deepseek,chatgpt等api，你有哪个用哪个。（本喵用的是deepseek-R2或者deepseek-V3.2，思考模型表现挺不错的）
 如果没有，这是我在SiliconFlow的邀请链接，你自己注册一个就行，送十几块钱的API费用呢。
 https://cloud.siliconflow.cn/i/Su2ao83G
 
 邀请码是Su2ao83G
 
+注册后，新建一个APi密钥。然后就能用啦！
+<img width="384" height="625" alt="image" src="https://github.com/user-attachments/assets/974b17a6-1619-4ab6-ab68-f8375b757d09" />
+
+
 然后打开程序，在程序底部输入AI的base_url，model，api密钥就行了。
-例如我的就是``https://api.siliconflow.cn/v1``,``deepseek-ai/DeepSeek-V3``和``sk-xxxxxxxxxxxxxxxxxxxxxx``
-你照样填就好了
+例如我的base_url就是``https://api.siliconflow.cn/v1``,model就是``deepseek-ai/DeepSeek-R1``，API密钥是``sk-xxxxxxxxxxxxxxxxxxxxxx``
+你照样填就好了。然后点击保存，然后点击一下测试看看吧！
 
 实际使用：
 1. **拖**：把你的数据文件(.csv/.xlsx/.txt,甚至是tif格式的图片也可以喵)拖到窗口里
