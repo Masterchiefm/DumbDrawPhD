@@ -46,7 +46,7 @@ class DeepSeek:
         )
 
         full_response = []
-        print("reasoning:")
+        print("Thinking:")
         reason_complete = False
         current_line = ""  # 用于缓存当前行的内容
 
@@ -72,7 +72,7 @@ class DeepSeek:
             if chunk_content:  # 过滤空内容
                 if not reason_complete:
                     current_line = flush_line(current_line)  # 确保之前的行被输出
-                    print("\nEnd of reasoning\n\nOutput:\n")
+                    print("\nEnd of Thinking\n\nOutput:\n")
                     reason_complete = True
                 # 处理普通内容，按行输出
                 for char in chunk_content:
