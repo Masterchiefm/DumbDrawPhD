@@ -11,7 +11,6 @@ import time
 import atexit
 from pathlib import Path
 import pandas as pd
-import webbrowser
 import platform
 
 from typing import Tuple, List
