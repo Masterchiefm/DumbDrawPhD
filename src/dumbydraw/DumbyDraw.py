@@ -42,9 +42,10 @@ def get_sys_info():
     # print(f"操作系统是{os_info}")
     conda_env_path = os.environ.get('CONDA_PREFIX', None)
     if conda_env_path:
-        conda_env_path = "conda可执行文件在{conda_env}"
+        conda_env_path = f"conda可执行文件在{conda_env}"
       
-  info = (f"当前虚拟环境路径: {venv_path}; Python解释器地址: {executable}; 操作系统是{os_info}；")
+  info = (f"\n用户当前平台信息：\n\n当前虚拟环境路径: {venv_path}; Python解释器地址: {executable}; 操作系统是{os_info}；{conda_env_path}")
+  print(info)
   return info
 
 
@@ -761,8 +762,8 @@ class MainWindow(QMainWindow):
 
         # 显示版本号
         self.setWindowTitle(f"DumbyDraw v{self.__version__}")
-
-        self.system_prompt = """你是一个python绘图代码生成工具，你能根据用户的输入直接生成代码。
+        sys_info = get_sys_info()
+        self.system_prompt = f"""你是一个python绘图代码生成工具，你能根据用户的输入直接生成代码。
 你输出的内容只能有完整的代码，不能有代码之外的其它东西。
 输出必须是 markdown ``` ``` 包裹的代码，之外不能有任何说明，说明只能是代码里的注释。
 禁止 if __name__ == "__main__",代码结尾不要带plt.close()，即使保存了图片，也要plt.show().
@@ -770,7 +771,6 @@ class MainWindow(QMainWindow):
 除非用户指定了其它语言或者字体，否则务必使用英文作为图注、图题。中文一定要注意字体。
 代码中的注释与用户输入的语言一致
 注意用户输入的第几第几是人类语言，是从1开始，而不是python的从0开始
-如果有双端测序需要拼接，一定要处理中间overlap而不是直接相加
 你代码中可以用python内置工具以及以下的第三方工具：
 matplotlib==3.7.5
 seaborn
@@ -783,6 +783,10 @@ numpy
 scipy
 cartopy
 你需要检查用的工具不在上表，如果不在，你需要在代码中使用try import，并在except中用sys.executable获取python路径，然后用python -m pip安装。并且指定用清华源https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+如果用户使用的是Linux或者Mac平台，可以使用当前虚拟环境中的fastp工具进行双端测序拼接；例如用subprocess运行当前当前虚拟环境路径/bin/fastp -i TFRC-2nd-LGL16087_L1_1.fq.gz -I TFRC-2nd-LGL16087_L1_2.fq.gz -m --merged_out TFRC-2nd-merged.fq.gz
+如果是windows平台，你需要自行写相应的代码实现，并一定要处理中间overlap而不是直接相加
+
+{sys_info}
 """
 
     def upgrade(self):
