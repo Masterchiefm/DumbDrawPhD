@@ -31,6 +31,20 @@ from .deepseek import DeepSeek
 from .GUI import Ui_MainWindow
 
 
+# =========================================
+# 系统信息获取
+#==========================================
+def get_sys_info():
+  venv_path = sys.prefix
+  print(f"当前虚拟环境路径: {venv_path}")
+  executable = sys.executable
+  print(f"Python解释器地址: {executable}")
+  os_info = sys.platform
+  print(f"操作系统是{os_info}")
+  info = (f"可执行文件可以在: {venv_path}/bin中查找; Python解释器地址: {executable}; 操作系统是{os_info}")
+  return info
+
+
 # =====================================================
 # stdout / stderr 行缓冲重定向
 # =====================================================
