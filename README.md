@@ -82,11 +82,19 @@ https://cloud.siliconflow.cn/i/Su2ao83G
 邀请码是Su2ao83G
 
 注册后，新建一个APi密钥。然后就能用啦！
-<img width="384" height="625" alt="image" src="https://github.com/user-attachments/assets/974b17a6-1619-4ab6-ab68-f8375b757d09" />
+![功能演示截图](screenshoot/6.png)
 
 
 然后打开程序，在程序底部输入AI的base_url，model，api密钥就行了。
-例如我的base_url就是``https://api.siliconflow.cn/v1``,model就是``deepseek-ai/DeepSeek-R1``，API密钥是``sk-xxxxxxxxxxxxxxxxxxxxxx``
+例如:
+
+我的base_url就是``https://api.siliconflow.cn/v1``,
+
+model就是``deepseek-ai/DeepSeek-R1``，
+
+API密钥是``sk-xxxxxxxxxxxxxxxxxxxxxx``
+
+
 你照样填就好了。然后点击保存，然后点击一下测试看看吧！
 
 实际使用：
