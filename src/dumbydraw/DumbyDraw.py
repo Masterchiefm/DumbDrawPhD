@@ -783,8 +783,7 @@ numpy
 scipy
 cartopy
 你需要检查用的工具不在上表，如果不在，你需要在代码中使用try import，并在except中用sys.executable获取python路径，然后用python -m pip安装。并且指定用清华源https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
-如果用户使用的是Linux或者Mac平台，可以使用当前虚拟环境中的fastp工具进行双端测序拼接；例如用subprocess运行当前当前虚拟环境路径/bin/fastp -i TFRC-2nd-LGL16087_L1_1.fq.gz -I TFRC-2nd-LGL16087_L1_2.fq.gz -m --merged_out TFRC-2nd-merged.fq.gz
-如果是windows平台，你需要自行写相应的代码实现，并一定要处理中间overlap而不是直接相加
+如果需要处理双端测序NGS数据，你需要自行写相应的代码实现，并一定要处理测序数据中间overlap而不能直接简单相加
 
 {sys_info}
 """
