@@ -23,7 +23,7 @@ class DeepSeek:
         self.prompt = prompt
         self.model = model
 
-    def get_response(self, query, temperature=0, prompt='', model="deepseek-ai/DeepSeek-V3", return_type="string"):
+    def get_response(self, query, temperature=0.2, prompt='', model="deepseek-ai/DeepSeek-V3", return_type="string"):
         """
         Args: 。
             query: Str
